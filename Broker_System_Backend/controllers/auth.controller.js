@@ -14,13 +14,13 @@ const signup = async (req, res) => {
   
     const user = new User({
       uid, 
-    //   email,
+    
       role: validRole._id, 
     });
 
     await user.save();
 
-    // Step 3: Optionally, set Firebase custom claims (assign role to Firebase)
+  
     await admin.auth().setCustomUserClaims(uid, { roleId });
 
     res.status(201).json({ message: "User created successfully" });
