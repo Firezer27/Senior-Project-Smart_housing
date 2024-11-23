@@ -16,9 +16,6 @@ const createRole = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
-
 const getAllRoles = async (req, res) => {
   try {
     const roles = await Role.find();
