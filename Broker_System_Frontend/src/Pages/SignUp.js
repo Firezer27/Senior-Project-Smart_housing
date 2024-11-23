@@ -6,55 +6,64 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const RegistrationForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const location = useLocation();
-  const userType = location.state?.userType || 'defaultRole'; 
+  const roleId = location.state?.userTypeId || null; 
   
-  console.log("userType",userType);
+  console.log("Role ID passed from Home page:", roleId);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-   
-   
+
+    if (!roleId) {
+      setError('Role ID is missing. Please go back and select a role.');
+      return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log("Account created:", userCredential.user);
+
       await sendEmailVerification(userCredential.user);
       setSuccess('Verification email sent! Please check your inbox.');
 
+ 
       const uid = userCredential.user.uid;
-      await assignRole(uid,userType); 
+      console.log("User UID:", uid);
+
+      await assignRole(uid, roleId);
+
       navigate('/login');
     } catch (err) {
+      console.error("Error during registration:", err);
       setError(err.message);
     }
   };
-  console.log("Role being assigned:",userType);
-  const assignRole = async (uid, userType) => {
+
+  const assignRole = async (uid, roleId) => {
     try {
-      const response = await fetch('http://localhost:3000/setRole', {
-        method: "POST",
+      const response = await fetch('http://localhost:3000/api/auth/signup', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ uid, userType }),
+        body: JSON.stringify({ uid, roleId }), 
       });
 
       if (!response.ok) {
-        throw new Error('Failed to assign role.'); 
+        throw new Error('Failed to assign role.');
       }
-      
+
       const data = await response.json();
-      console.log(data);
+      console.log("Role assignment response:", data);
     } catch (error) {
       console.error('Error assigning role:', error);
-      setError('Failed to assign role.');
+      throw new Error('Failed to assign role.');
     }
   };
 
