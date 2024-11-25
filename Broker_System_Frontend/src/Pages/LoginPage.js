@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { auth } from '../Firebase'; 
+import { auth } from '../Firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import axios from 'axios'; 
+
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -17,36 +19,41 @@ const Login = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
       if (!user.emailVerified) {
         setError('Please verify your email before logging in. Check your email inbox!');
         return;
       }
+
       console.log('Logged in:', user);
       setSuccess('Login successful!');
-      const uid = user.uid;
-      console.log("User UID:", uid);
+
       const idToken = await user.getIdToken();
+      console.log("ID Token:", idToken);
+
+      const decodedToken = jwtDecode(idToken);
+      console.log(decodedToken);
+
+      const id = decodedToken.roleId; 
+      console.log("Role ID from token:", id);
+
+     
+      const response = await axios.get(`http://localhost:3000/api/roles/${id}`);
+      const roleName = response.data.roleName;
+      console.log("Role Name:", roleName);
+
       
-    console.log("ID Token:", idToken);
-    const decodedToken = jwtDecode(idToken);
-    console.log(decodedToken);
-    const uidfromtoken = decodedToken.sub;
-    console.log("Decoded UID from ID token:", uidfromtoken);
-    const userType = decodedToken.userType;
-    console.log("Decoded  userType from ID token:", userType);
-
-if (userType === 'owner') {
-  navigate('/ownerPage');
-} else if (userType === 'tenant') {
-  navigate('/tenantPage'); 
-} else {
-  console.log('No specific role, navigating to default page.');
-  navigate('/'); 
-}
-
+      if (roleName === 'owner') {
+        navigate('/ownerPage');
+      } else if (roleName === 'tenant') {
+        navigate('/tenantPage');
+      } else {
+        console.log('No specific role, navigating to default page.');
+        navigate('/');
+      }
     } catch (err) {
-      setError(err.message);
-      console.error('Error logging in:', err.message);
+      setError('Error during login: ' + err.message);
+      console.error('Error logging in:', err);
     }
   };
 
